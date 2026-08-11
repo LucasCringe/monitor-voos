@@ -2,40 +2,46 @@ import os
 import requests
 import google.generativeai as genai
 
-# 1. Configurar APIs com as chaves seguras do GitHub
+# Configuração das chaves seguras do GitHub Actions
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Configura o Gemini
+# Configura a biblioteca do Gemini
 genai.configure(api_key=GEMINI_KEY)
 
-def buscar_voos():
-    # PARAMETROS DA SUA VIAGEM (Altere se necessário):
-    origem = "GRU"       # Código do aeroporto (ex: GRU para Guarulhos)
-    destino = "MIA"      # Código do aeroporto (ex: MIA para Miami)
-    data_ida = "2026-11-10"
-    data_volta = "2026-11-20"
-
-    url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={origem}&arrival_id={destino}&outbound_date={data_ida}&return_date={data_volta}&currency=BRL&hl=pt&api_key={SERPAPI_KEY}"
-    
+def buscar_voos_destino(origem, destino, data_ida):
+    """Busca passagens de ida para um destino específico na SerpApi."""
+    url = f"https://serpapi.com/search.json?engine=google_flights&departure_id={origem}&arrival_id={destino}&outbound_date={data_ida}&type=2&currency=BRL&hl=pt&api_key={SERPAPI_KEY}"
     resposta = requests.get(url)
-    return resposta.json()
+    if resposta.status_code == 200:
+        return resposta.json()
+    return {}
 
-def analisar_com_gemini(dados_voos):
+def analisar_com_gemini(dados_nat, dados_jpa, data_ida):
+    # Usa o modelo Gemini mais atualizado
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
-    Você é um assistente especialista em passagens aéreas.
-    Analise os seguintes dados brutos de voos retornados pela busca:
-    {str(dados_voos)[:3000]}
+    Você é um assistente de viagens especialista em encontrar passagens baratas para Pipa/RN.
+    O usuário quer ir de São Paulo (SAO) para a praia de Pipa na data: {data_ida}.
+    Os dois aeroportos mais próximos são Natal (NAT - 90km) e João Pessoa (JPA - 150km).
 
-    Instruções:
-    1. Extraia os 3 voos mais baratos.
-    2. Para cada voo informe: Companhia aérea, preço total em R$, se tem escalas e duração.
-    3. Escreva uma mensagem muito curta, limpa e formatada para ser enviada pelo Telegram.
-    4. Diga se o valor atual parece bom ou se vale a pena esperar.
+    Abaixo estão os dados brutos obtidos para ambos os aeroportos:
+
+    --- DADOS NATAL (NAT) ---
+    {str(dados_nat)[:3000]}
+
+    --- DADOS JOÃO PESSOA (JPA) ---
+    {str(dados_jpa)[:3000]}
+
+    INSTRUÇÕES DE RESPOSTA:
+    1. Crie uma mensagem curta, bonita e formatada em Markdown para o Telegram.
+    2. Apresente as 2 melhores/mais baratas opções de voo de IDA para NATAL (NAT).
+    3. Apresente as 2 melhores/mais baratas opções de voo de IDA para JOÃO PESSOA (JPA).
+    4. Para cada opção, indique: Companhia Aérea, Aeroporto de Origem (GRU/CGH/VCP), Horário, Escalas e Preço em R$.
+    5. No final, dê um VEREDITO: Qual aeroporto está compensando mais em preço para chegar a Pipa nesta data.
     """
     
     response = model.generate_content(prompt)
@@ -52,9 +58,22 @@ def enviar_telegram(mensagem):
 
 if __name__ == "__main__":
     try:
-        dados = buscar_voos()
-        relatorio = analisar_com_gemini(dados)
+        # CONFIGURAÇÕES DA SUA VIAGEM:
+        origem = "SAO"            # Busca voos de GRU, CGH e VCP
+        data_ida = "2026-11-10"   # Altere para a data desejada (AAAA-MM-DD)
+
+        print("Buscando voos para Natal (NAT)...")
+        dados_nat = buscar_voos_destino(origem, "NAT", data_ida)
+
+        print("Buscando voos para João Pessoa (JPA)...")
+        dados_jpa = buscar_voos_destino(origem, "JPA", data_ida)
+
+        print("Analisando e comparando com o Gemini...")
+        relatorio = analisar_com_gemini(dados_nat, dados_jpa, data_ida)
+
+        print("Enviando mensagem no Telegram...")
         enviar_telegram(relatorio)
-        print("Monitoramento concluído e mensagem enviada com sucesso!")
+        
+        print("Monitoramento NAT + JPA concluído com sucesso!")
     except Exception as e:
-        print(f"Erro ao executar: {e}")
+        print(f"Erro ao executar o monitoramento: {e}")
