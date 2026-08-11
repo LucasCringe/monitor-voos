@@ -1,10 +1,10 @@
-name: Monitor Diario de Voos
+name: Monitor Diario de Voos - Pipa
 
 on:
   schedule:
-    # Executa todos os dias às 09:00 da manhã (Horário de Brasília / 12:00 UTC)
-    - cron: '0 12 * * *'
-  workflow_dispatch: # Permite rodar manualmente no botão para testar
+    # Executa todos os dias às 09:00 e às 21:00 (Horário de Brasília)
+    - cron: '0 12,0 * * *'
+  workflow_dispatch: # Permite rodar manualmente no botão de teste a qualquer momento
 
 jobs:
   executar-monitor:
@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Baixar codigo do repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Atualizado de v3 para v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Atualizado de v4 para v5
         with:
           python-version: '3.10'
 
