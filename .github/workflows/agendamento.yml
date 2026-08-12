@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Baixar codigo do repositorio
-        uses: actions/checkout@v4 # Atualizado de v3 para v4
+        uses: actions/checkout@v4.2.2 # Patch com suporte nativo/atualizado
 
       - name: Configurar Python
-        uses: actions/setup-python@v5 # Atualizado de v4 para v5
+        uses: actions/setup-python@v5.4.0 # Patch atualizado
         with:
           python-version: '3.10'
 
