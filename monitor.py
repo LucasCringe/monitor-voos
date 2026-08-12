@@ -41,7 +41,7 @@ def analisar_com_gemini(dados_nat, dados_jpa, data_ida):
     2. Apresente as 2 melhores/mais baratas opções de voo de IDA para NATAL (NAT).
     3. Apresente as 2 melhores/mais baratas opções de voo de IDA para JOÃO PESSOA (JPA).
     4. Para cada opção, indique: Companhia Aérea, Aeroporto de Origem (GRU/CGH/VCP), Horário, Escalas e Preço em R$.
-    5. No final, dê um VEREDITO: Qual aeroporto está compensando mais em preço para chegar a Pipa nesta .
+    5. No final, dê um VEREDITO: Qual aeroporto está compensando mais em preço para chegar a Pipa nesta data.
     """
     
     response = model.generate_content(prompt)
